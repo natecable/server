@@ -2,7 +2,7 @@
 session_start();
 
 // Ensure admin authentication
-if (!isset($_SESSION["authenticated"]) || $_SESSION["authenticated"] !== 'true' || $_SESSION["username"] !== "admin") {
+if (!isset($_SESSION["authenticated"]) || $_SESSION["authenticated"] !== 'true' || !password_verify("admin", $_SESSION["username"])) {
     die("Not authenticated!");
 }
 
