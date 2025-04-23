@@ -1,9 +1,13 @@
 <?php
 session_start();
-session_regenerate_id(true);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!empty($_POST["username"]) && !empty($_POST["password"])) {
+    if (!empty($_POST["username"]) && !empty($_POST["password"]) && isset($_POST["csrf_token"])) {
+
+        if ($_POST["csrf_token"] !== $_SESSION["csrf_token"]) {
+            die("CSRF verification failed.");
+        }
+
         $username = trim(filter_var($_POST["username"], FILTER_SANITIZE_STRING));
         $password = trim($_POST["password"]);
 
@@ -19,8 +23,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $tokens = explode(":", $line);
             if (count($tokens) !== 3) continue;
 
-            if ($tokens[0] === $username && password_verify($password, $tokens[1])) {
-                $_SESSION["username"] = $username;
+            if (password_verify($username, $tokens[0]) && password_verify($password, $tokens[1])) {
+                session_regenerate_id(true);
+                $_SESSION["username"] = $tokens[0]; // Store hashed username
                 $_SESSION["authenticated"] = 'true';
                 header('Location: index.php');
                 exit();
@@ -34,19 +39,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 } else {
+    if (!isset($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+
     if (isset($_GET["incorrect"])) {
         $alerts = [
             "true" => "Incorrect Password",
             "exists" => "Create account failed because user already exists",
             "false" => "Create account was a success!"
         ];
-
+        
         if (isset($alerts[$_GET["incorrect"]])) {
             echo "<script>alert('{$alerts[$_GET["incorrect"]]}');</script>";
         }
     }
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">

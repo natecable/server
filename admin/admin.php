@@ -1,6 +1,8 @@
 <?php
 session_start();
 
+$admin_hash = "$2y$10$75HFGju.VjIIh1oJsJ/9g.w1Mdo9ewRm1rJmZgxDugZfwFiiE2XiW";
+
 // Ensure admin authentication
 if (!isset($_SESSION["authenticated"]) || $_SESSION["authenticated"] !== 'true' || !password_verify("admin", $_SESSION["username"])) {
     die("Not authenticated!");
