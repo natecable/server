@@ -1,59 +1,82 @@
 <?php
 session_start();
-// todo: change the default admin password in logins.txt
-if (isset($_SESSION["authenticated"]) && $_SESSION["authenticated"] == 'true' && $_SESSION["username"] == "admin") {
+
+// Ensure admin authentication
+if (!isset($_SESSION["authenticated"]) || $_SESSION["authenticated"] !== 'true' || $_SESSION["username"] !== "admin") {
+    die("Not authenticated!");
+}
+
+// Generate CSRF token if not set
+if (!isset($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
 ?>
-    <html lang=en>
 
-    <head>
-        <meta http-equiv="content-type" content="text/html; charset=utf-8">
-        <title>(Insert Team Name) Room</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-    </head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <title>(Team 4) Room</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+    <h1>Team 4</h1>
 
-    <body>
-        <h1>Insert Team Name Here!!</h1>
-        <form id="delete" method="post" action="admin.php">
-            <label for="message">Delete the user:</label><br>
-            <input type="text" id="delete_user" name="delete_user"><br><br>
-            <input type="submit" id="submit" value="Submit">
-        </form>
-        <form id="clear" method="post" action="admin.php">
-            <input hidden type="text" id="clear" name="clear" value="true">
-            <input type="submit" id="submit" value="Clear All Messages">
-        </form>
-    </body>
+    <form id="delete" method="post" action="admin.php">
+        <label for="delete_user">Delete the user:</label><br>
+        <input type="text" id="delete_user" name="delete_user" required><br><br>
+        <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+        <input type="submit" id="submit" value="Submit">
+    </form>
 
-    </html>
+    <form id="clear" method="post" action="admin.php">
+        <input hidden type="text" name="clear" value="true">
+        <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+        <input type="submit" id="submit" value="Clear All Messages">
+    </form>
+</body>
+</html>
+
 <?php
-} else {
-    echo "Not authenticated!";
-}
-
-if (isset($_POST["clear"]) && $_POST["clear"] == 'true') {
-    // delete all messages
-    $myfile = fopen("../messages.txt", "w");
-    fwrite($myfile, "");
-    fclose($myfile);
-}
-if (isset($_POST["delete_user"]) && $_POST["delete_user"] != 'admin') {
-    // delete the user if its not the admin
-    $myfile = fopen("../logins.txt", "r");
-    $data = "";
-    if (filesize("../logins.txt") != 0) {
-        $data = fread($myfile, filesize("../logins.txt"));
+// Validate CSRF token
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+        die("CSRF verification failed.");
     }
-    fclose($myfile);
-    $lines = explode("\n", $data);
-    $newdata = "";
-    foreach ($lines as $line) {
-        $tokens = explode(":", $line);
-        if ($tokens[0] != $_POST["delete_user"]) {
-            $newdata .= ($line . "\n");
+
+    // Delete all messages securely
+    if (isset($_POST["clear"]) && $_POST["clear"] === 'true') {
+        if (file_exists("../messages.txt")) {
+            file_put_contents("../messages.txt", "", LOCK_EX);
         }
     }
 
-    $myfile = fopen("../logins.txt", "w");
-    fwrite($myfile, $newdata);
-    fclose($myfile);
+    // Delete a user safely (excluding admin)
+    if (isset($_POST["delete_user"])) {
+        $delete_user = trim(filter_var($_POST["delete_user"], FILTER_SANITIZE_STRING));
+
+        if ($delete_user !== "admin" && file_exists("../logins.txt")) {
+            $data = file_get_contents("../logins.txt");
+            $lines = explode("\n", trim($data));
+            $newdata = "";
+
+            foreach ($lines as $line) {
+                $tokens = explode(":", $line);
+                if ($tokens[0] !== $delete_user) {
+                    $newdata .= ($line . "\n");
+                }
+            }
+
+            // Securely write new file contents with file locking
+            $fp = fopen("../logins.txt", "w");
+            if ($fp) {
+                flock($fp, LOCK_EX);
+                fwrite($fp, trim($newdata));
+                flock($fp, LOCK_UN);
+                fclose($fp);
+            }
+        }
+    }
 }
+?>
