@@ -1,56 +1,52 @@
 <?php
 session_start();
-$username = null;
-$password = null;
+session_regenerate_id(true);
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    if(!empty($_POST["username"]) && !empty($_POST["password"])) {
-        $username = $_POST["username"];
-        $password = $_POST["password"];
-        $loginfound = 0;
-        $myfile = fopen("logins.txt", "r");
-        if (filesize("logins.txt") == 0){
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!empty($_POST["username"]) && !empty($_POST["password"])) {
+        $username = trim(filter_var($_POST["username"], FILTER_SANITIZE_STRING));
+        $password = trim($_POST["password"]);
+
+        if (!file_exists("logins.txt") || filesize("logins.txt") == 0) {
             header('Location: login.php?incorrect=true');
+            exit();
         }
-        $data = fread($myfile, filesize("logins.txt"));
-        fclose($myfile);
-        $lines = explode("\n", $data);
-        foreach($lines as $line){
+
+        $data = file_get_contents("logins.txt");
+        $lines = explode("\n", trim($data));
+
+        foreach ($lines as $line) {
             $tokens = explode(":", $line);
-            if (count($tokens) != 3){
-                continue;
-            }
-            $passhash = $password;
-            if ($tokens[0] == $username && $tokens[1] == $passhash){
-                $loginfound = 1;
+            if (count($tokens) !== 3) continue;
+
+            if ($tokens[0] === $username && password_verify($password, $tokens[1])) {
                 $_SESSION["username"] = $username;
                 $_SESSION["authenticated"] = 'true';
                 header('Location: index.php');
+                exit();
             }
         }
-	    if ($loginfound == 0){
-        	header('Location: login.php?incorrect=true');
-    	}
+
+        header('Location: login.php?incorrect=true');
+        exit();
     } else {
         header('Location: login.php?incorrect=false');
+        exit();
     }
 } else {
-    if(isset($_GET["incorrect"])) {
-        if ($_GET["incorrect"] == 'true'){
-            echo '<script language="javascript">';
-            echo 'alert("Incorrect Password")';
-            echo '</script>';
-        } elseif ($_GET["incorrect"] == "exists"){
-            echo '<script language="javascript">';
-            echo 'alert("Create account failed because user already exists")';
-            echo '</script>';
-        } elseif ($_GET["incorrect"] == "false"){
-            echo '<script language="javascript">';
-            echo 'alert("Create account was a success!")';
-            echo '</script>';
+    if (isset($_GET["incorrect"])) {
+        $alerts = [
+            "true" => "Incorrect Password",
+            "exists" => "Create account failed because user already exists",
+            "false" => "Create account was a success!"
+        ];
+        if (isset($alerts[$_GET["incorrect"]])) {
+            echo "<script>alert('{$alerts[$_GET["incorrect"]]}');</script>";
         }
     }
+}
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
