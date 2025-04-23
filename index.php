@@ -19,7 +19,7 @@ $data = htmlspecialchars($data, ENT_QUOTES, 'UTF-8');
     <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
-    <h1>Insert Team Name Here!!</h1>
+    <h1>Team 4</h1>
 
     <form id="myForm" action="./post.php" method="POST">
         <label for="message">Input Your Message:</label><br>

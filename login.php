@@ -40,13 +40,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             "exists" => "Create account failed because user already exists",
             "false" => "Create account was a success!"
         ];
+
         if (isset($alerts[$_GET["incorrect"]])) {
             echo "<script>alert('{$alerts[$_GET["incorrect"]]}');</script>";
         }
     }
 }
 ?>
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -63,6 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <h1>Login</h1>
         </hgroup>        
     </header>
+
     <!-- [content] -->
     <section id="content">
         <form id="login" method="post">
@@ -74,7 +75,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <input type="submit" value="Login">
         </form>
     </section>
+
     <br><hr><br>
+
     <header id="banner">
         <hgroup>
             <h1>Create Account</h1>
@@ -96,4 +99,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <!-- [/page] -->
 </body>
 </html>
-<?php } ?>
