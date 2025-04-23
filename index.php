@@ -15,7 +15,7 @@ $data = htmlspecialchars($data, ENT_QUOTES, 'UTF-8');
 <html lang="en">
 <head>
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
-    <title>(Insert Team Name) Room</title>
+    <title>Team 4 Room</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
@@ -29,6 +29,10 @@ $data = htmlspecialchars($data, ENT_QUOTES, 'UTF-8');
 
     <form id="logoutForm" action="logout.php">
         <input type="submit" id="submit" value="Logout">
+    </form>
+
+    <form id="adminForm" action="admin/admin.php">
+        <input type="submit" id="submit" value="Admin">
     </form>
 
     <script>
